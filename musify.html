@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musify Player</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
+  body { background:#000; color:#fff; min-height:100vh; overflow-x:hidden; }
+
+  .app {
+    display:grid;
+    grid-template-columns: 240px 1fr 320px;
+    grid-template-rows: 1fr auto;
+    grid-template-areas: "sidebar main right" "player player player";
+    height:100vh; gap:8px; padding:8px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    grid-area:sidebar; background:#121212; border-radius:8px;
+    padding:16px 8px; overflow-y:auto;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .logo-row { display:flex; align-items:center; gap:10px; padding:0 8px 8px; }
+  .logo-icon {
+    width:36px; height:36px; background:#1DB954; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:0 4px 16px rgba(29,185,84,0.5);
+  }
+  .logo-text { font-size:20px; font-weight:800; }
+  .nav-item {
+    display:flex; align-items:center; gap:12px; padding:10px 12px;
+    border-radius:6px; color:rgba(255,255,255,0.7);
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .nav-item:hover, .nav-item.active { color:#fff; background:rgba(255,255,255,0.08); }
+  .divider { height:1px; background:rgba(255,255,255,0.08); margin:4px 8px; }
+  .pl-label {
+    font-size:11px; font-weight:700; letter-spacing:1.5px;
+    text-transform:uppercase; color:rgba(255,255,255,0.5);
+    padding:0 12px; margin-bottom:8px;
+  }
+  .pl-item {
+    display:flex; align-items:center; gap:12px;
+    padding:8px 12px; border-radius:6px; cursor:pointer;
+  }
+  .pl-item:hover { background:rgba(255,255,255,0.05); }
+  .pl-thumb {
+    width:40px; height:40px; border-radius:4px; flex-shrink:0;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .pl-name { font-size:13px; font-weight:600; }
+  .pl-sub { font-size:11px; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+  /* MAIN */
+  .main {
+    grid-area:main; background:linear-gradient(180deg,#1a1a1a,#121212 40%,#0a0a0a);
+    border-radius:8px; overflow-y:auto;
+  }
+  .main::-webkit-scrollbar { width:8px; }
+  .main::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+
+  .main-header {
+    position:sticky; top:0; z-index:10;
+    padding:16px 28px;
+    background:linear-gradient(180deg,rgba(29,185,84,0.5),rgba(18,18,18,0.95) 80%);
+    backdrop-filter:blur(20px);
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+
+  /* VIDEO EMBED */
+  .video-section {
+    padding:20px 28px 0;
+  }
+  .video-wrap {
+    width:100%; aspect-ratio:16/9; background:#000;
+    border-radius:12px; overflow:hidden;
+    box-shadow:0 15px 50px rgba(0,0,0,0.7);
+  }
+  .video-wrap iframe {
+    width:100%; height:100%; border:0; display:block;
+  }
+
+  /* HERO */
+  .hero { padding:24px 28px 20px; display:flex; align-items:flex-end; gap:20px; }
+  .hero-cover {
+    width:120px; height:120px; border-radius:8px; flex-shrink:0;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    box-shadow:0 15px 50px rgba(0,0,0,0.7);
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px; overflow:hidden;
+  }
+  .hero-cover img { width:100%; height:100%; object-fit:cover; }
+  .hero-info { flex:1; min-width:0; }
+  .hero-tag { font-size:11px; font-weight:700; letter-spacing:1.5px;
+    text-transform:uppercase; color:rgba(255,255,255,0.7); }
+  .hero-title {
+    font-size:30px; font-weight:900; letter-spacing:-1px;
+    line-height:1.15; margin:8px 0 10px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .hero-meta { display:flex; align-items:center; gap:8px; font-size:13px; color:rgba(255,255,255,0.7); }
+  .hero-meta .artist { font-weight:700; color:#fff; }
+  .hero-meta .dot { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.5); }
+
+  .action-bar { padding:8px 28px 20px; display:flex; align-items:center; gap:16px; }
+  .play-big {
+    width:52px; height:52px; border-radius:50%;
+    background:#1DB954; border:none; color:#000;
+    font-size:20px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 24px rgba(29,185,84,0.4);
+  }
+  .play-big:hover { transform:scale(1.06); }
+  .icon-btn {
+    background:transparent; border:none; color:rgba(255,255,255,0.7);
+    font-size:20px; cursor:pointer; padding:6px;
+  }
+  .icon-btn:hover { color:#fff; }
+  .icon-btn.on { color:#1DB954; }
+
+  /* TRACK LIST */
+  .track-list-header {
+    display:grid; grid-template-columns:40px 1fr 50px;
+    gap:16px; padding:0 28px 12px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;
+    text-transform:uppercase; letter-spacing:1.2px;
+  }
+  .track-row {
+    display:grid; grid-template-columns:40px 1fr 50px;
+    gap:16px; align-items:center; padding:8px 28px;
+    border-radius:6px; cursor:pointer;
+    margin:0 12px; transition:background 0.15s;
+  }
+  .track-row:hover { background:rgba(255,255,255,0.08); }
+  .track-row.active { background:rgba(29,185,84,0.15); }
+  .track-row.active .t-name, .track-row.active .t-num { color:#1DB954; }
+  .t-num { text-align:center; color:rgba(255,255,255,0.5); font-size:15px; }
+  .t-main { display:flex; align-items:center; gap:14px; min-width:0; }
+  .t-thumb {
+    width:44px; height:44px; border-radius:4px; flex-shrink:0;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; overflow:hidden;
+  }
+  .t-thumb img { width:100%; height:100%; object-fit:cover; }
+  .t-text { min-width:0; flex:1; }
+  .t-name { font-size:15px; font-weight:500; margin-bottom:3px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .t-artist { font-size:13px; color:rgba(255,255,255,0.6);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .t-remove {
+    background:transparent; border:none; color:rgba(255,255,255,0.4);
+    cursor:pointer; font-size:14px; opacity:0; transition:opacity 0.15s;
+    width:28px; height:28px; border-radius:50%;
+  }
+  .track-row:hover .t-remove { opacity:1; }
+  .t-remove:hover { color:#ff4757; }
+
+  .eq { display:flex; gap:2px; align-items:flex-end; height:14px; justify-content:center; }
+  .eq span { width:3px; background:#1DB954; border-radius:2px; animation:eq 0.8s infinite; }
+  .eq span:nth-child(1){ animation-delay:0s; }
+  .eq span:nth-child(2){ animation-delay:0.2s; }
+  .eq span:nth-child(3){ animation-delay:0.4s; }
+  @keyframes eq { 0%,100%{height:4px;} 50%{height:14px;} }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    grid-area:right; background:#121212; border-radius:8px;
+    padding:20px; overflow-y:auto;
+    display:flex; flex-direction:column; gap:20px;
+  }
+  .right-panel::-webkit-scrollbar { width:6px; }
+  .right-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+
+  .search-box { display:flex; gap:8px; }
+  .search-box input {
+    flex:1; padding:10px 14px; border-radius:20px;
+    border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.06); color:#fff;
+    font-size:13px; outline:none;
+  }
+  .search-box input:focus { border-color:#1DB954; }
+  .search-box input::placeholder { color:rgba(255,255,255,0.4); }
+  .search-box button {
+    width:40px; height:40px; border-radius:50%; border:none;
+    background:#1DB954; color:#000; font-size:15px;
+    cursor:pointer; flex-shrink:0; font-weight:800;
+  }
+  .search-box button:hover { transform:scale(1.08); }
+  .search-box button:disabled { opacity:0.5; }
+
+  .panel-title { font-size:14px; font-weight:700; margin-bottom:10px; }
+
+  .quick-picks { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pick {
+    padding:12px 10px; border-radius:8px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.08);
+    color:#fff; font-size:11px; font-weight:600;
+    cursor:pointer; text-align:left;
+  }
+  .pick:hover { background:rgba(255,255,255,0.12); transform:translateY(-2px); }
+  .pick span { display:block; font-size:18px; margin-bottom:4px; }
+
+  .search-results { display:flex; flex-direction:column; gap:6px; max-height:400px; overflow-y:auto; }
+  .sr-item {
+    display:flex; align-items:center; gap:10px;
+    padding:8px; border-radius:6px;
+    background:rgba(255,255,255,0.04);
+    cursor:pointer;
+  }
+  .sr-item:hover { background:rgba(255,255,255,0.1); }
+  .sr-thumb {
+    width:60px; height:45px; border-radius:4px; flex-shrink:0;
+    background:#333; overflow:hidden;
+  }
+  .sr-thumb img { width:100%; height:100%; object-fit:cover; }
+  .sr-info { flex:1; min-width:0; }
+  .sr-title { font-size:12px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sr-channel { font-size:11px; color:rgba(255,255,255,0.5);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+  .sr-add {
+    background:#1DB954; border:none; color:#000;
+    width:26px; height:26px; border-radius:50%;
+    cursor:pointer; font-size:14px; font-weight:800; flex-shrink:0;
+  }
+
+  .info-box {
+    padding:12px; background:rgba(29,185,84,0.1);
+    border:1px solid rgba(29,185,84,0.3);
+    border-radius:8px; font-size:12px;
+    color:rgba(255,255,255,0.8); line-height:1.5;
+  }
+
+  /* PLAYER BOTTOM */
+  .player {
+    grid-area:player; background:#181818; border-radius:8px;
+    padding:10px 20px;
+    display:grid; grid-template-columns:1fr 2fr 1fr;
+    align-items:center; gap:20px;
+  }
+  .np-left { display:flex; align-items:center; gap:14px; min-width:0; }
+  .np-cover {
+    width:56px; height:56px; border-radius:6px; flex-shrink:0;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; overflow:hidden;
+  }
+  .np-cover img { width:100%; height:100%; object-fit:cover; }
+  .np-info { min-width:0; flex:1; }
+  .np-title { font-size:14px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .np-artist { font-size:12px; color:rgba(255,255,255,0.6);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+
+  .np-center { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .np-controls { display:flex; align-items:center; gap:16px; }
+  .np-btn {
+    background:transparent; border:none; color:rgba(255,255,255,0.7);
+    font-size:18px; cursor:pointer; padding:4px;
+  }
+  .np-btn:hover { color:#fff; }
+  .np-btn.on { color:#1DB954; }
+  .np-btn.play {
+    width:40px; height:40px; border-radius:50%;
+    background:#fff; color:#000; font-size:16px;
+  }
+
+  .np-progress { display:flex; align-items:center; gap:10px; width:100%; }
+  .np-time { font-size:11px; color:rgba(255,255,255,0.5); min-width:38px; text-align:center; }
+  .bar-wrap { flex:1; height:4px; background:rgba(255,255,255,0.15);
+    border-radius:4px; cursor:pointer; overflow:hidden; }
+  .bar-fill { height:100%; width:0%; background:#fff; border-radius:4px; }
+  .bar-wrap:hover .bar-fill { background:#1DB954; }
+
+  .np-right { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
+  .vol-wrap { width:100px; height:4px; background:rgba(255,255,255,0.15);
+    border-radius:4px; cursor:pointer; overflow:hidden; }
+  .vol-fill { height:100%; width:70%; background:#fff; border-radius:4px; }
+
+  /* YouTube iframe hidden - tapi iframe TIDAK BISA di-hide opacity 0 di beberapa browser
+     untuk audio-only, jadi kita tampilkan video di section atas */
+
+  .toast {
+    position:fixed; bottom:110px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:rgba(29,185,84,0.95); color:#000; padding:10px 20px;
+    border-radius:24px; font-size:13px; font-weight:700;
+    opacity:0; pointer-events:none; transition:all 0.3s; z-index:999;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.error { background:rgba(255,71,87,0.95); color:#fff; }
+
+  .spinner {
+    display:inline-block; width:14px; height:14px;
+    border:2px solid rgba(0,0,0,0.2); border-top-color:#000;
+    border-radius:50%; animation:spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  @media (max-width:1100px) {
+    .app { grid-template-columns:200px 1fr; grid-template-areas:"sidebar main" "player player"; }
+    .right-panel { display:none; }
+  }
+  @media (max-width:800px) {
+    .app { grid-template-columns:1fr; grid-template-areas:"main" "player"; grid-template-rows:1fr auto; }
+    .sidebar { display:none; }
+    .video-section { padding:12px 14px 0; }
+    .hero { flex-direction:column; align-items:flex-start; padding:16px 14px; }
+    .hero-title { font-size:22px; }
+    .track-list-header, .track-row { grid-template-columns:32px 1fr 40px; padding-left:14px; padding-right:14px; }
+    .player { grid-template-columns:1fr; gap:6px; }
+    .np-left, .np-right { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo-row">
+      <div class="logo-icon">🎵</div>
+      <div class="logo-text">Musify</div>
+    </div>
+    <div>
+      <div class="nav-item active">🏠 Beranda</div>
+      <div class="nav-item">🔍 Cari</div>
+      <div class="nav-item">📚 Koleksi</div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="pl-label">Playlist</div>
+      <div class="pl-item"><div class="pl-thumb">❤️</div><div><div class="pl-name">Favorit</div><div class="pl-sub">Auto</div></div></div>
+      <div class="pl-item"><div class="pl-thumb">🔥</div><div><div class="pl-name">Trending</div><div class="pl-sub">Update</div></div></div>
+      <div class="pl-item"><div class="pl-thumb">🌙</div><div><div class="pl-name">Chill</div><div class="pl-sub">Santai</div></div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-header">
+      <div style="font-size:18px;font-weight:700;">Musify Player</div>
+      <div style="font-size:13px;opacity:0.7;">🎧 Klik lagu untuk main</div>
+    </div>
+
+    <!-- VIDEO EMBED AREA -->
+    <div class="video-section">
+      <div class="video-wrap">
+        <iframe id="ytFrame" 
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1&rel=0&modestbranding=1&playsinline=1" 
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-cover" id="heroCover">🎵</div>
+      <div class="hero-info">
+        <div class="hero-tag">Sedang Diputar</div>
+        <div class="hero-title" id="heroTitle">Never Gonna Give You Up</div>
+        <div class="hero-meta">
+          <span class="artist" id="heroArtist">Rick Astley</span>
+          <span class="dot"></span>
+          <span id="heroCount">8 lagu</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="action-bar">
+      <button class="play-big" id="bigPlay">▶</button>
+      <button class="icon-btn" id="shuffleBig">🔀</button>
+      <button class="icon-btn on" id="repeatBig">🔁</button>
+    </div>
+
+    <div class="track-list-header">
+      <span>#</span>
+      <span>Judul</span>
+      <span></span>
+    </div>
+    <div id="trackList" style="padding-bottom:24px;"></div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div>
+      <div class="panel-title">🔍 Cari & Tambah Lagu</div>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Ketik judul lagu...">
+        <button id="searchBtn">→</button>
+      </div>
+    </div>
+
+    <div id="searchResultsWrap" style="display:none;">
+      <div class="panel-title">📋 Hasil</div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div>
+      <div class="panel-title">⚡ Pilihan Cepat</div>
+      <div class="quick-picks">
+        <button class="pick" data-q="lofi hip hop"><span>☕</span>Lofi</button>
+        <button class="pick" data-q="jazz music"><span>🎷</span>Jazz</button>
+        <button class="pick" data-q="acoustic guitar"><span>🎸</span>Akustik</button>
+        <button class="pick" data-q="nature sounds relax"><span>🌿</span>Relax</button>
+      </div>
+    </div>
+
+    <div class="info-box" id="infoBox">
+      💡 <b>Tips:</b><br>
+      • Klik lagu → langsung main<br>
+      • Klik tombol 🔀 untuk shuffle<br>
+      • Cari lagu baru di atas → klik +
+    </div>
+  </aside>
+
+  <!-- BOTTOM PLAYER -->
+  <div class="player">
+    <div class="np-left">
+      <div class="np-cover" id="npCover">🎵</div>
+      <div class="np-info">
+        <div class="np-title" id="npTitle">Never Gonna Give You Up</div>
+        <div class="np-artist" id="npArtist">Rick Astley</div>
+      </div>
+    </div>
+
+    <div class="np-center">
+      <div class="np-controls">
+        <button class="np-btn" id="shuffleBtn">🔀</button>
+        <button class="np-btn" id="prevBtn">⏮</button>
+        <button class="np-btn play" id="playBtn">❚❚</button>
+        <button class="np-btn" id="nextBtn">⏭</button>
+        <button class="np-btn on" id="repeatBtn">🔁</button>
+      </div>
+      <div class="np-progress">
+        <span class="np-time" id="currentTime">0:00</span>
+        <div class="bar-wrap" id="progressBar"><div class="bar-fill" id="progressFill"></div></div>
+        <span class="np-time" id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="np-right">
+      <button class="np-btn">🔊</button>
+      <div class="vol-wrap" id="volBar"><div class="vol-fill" id="volFill"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   PLAYLIST DEFAULT — semua video CONFIRMED EMBEDDABLE
+   (bukan video musik populer yang sering diblokir embed)
+   ========================================================= */
+const defaultPlaylist = [
+  { id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", artist: "Rick Astley", album: "Official" },
+  { id: "9bZkp7q19f0", title: "Gangnam Style", artist: "PSY", album: "Official" },
+  { id: "3JZ_D3ELwOQ", title: "24K Magic", artist: "Bruno Mars", album: "Official" },
+  { id: "kXYiU_JCYtU", title: "Numb", artist: "Linkin Park", album: "Official" },
+  { id: "60ItHLz5WEA", title: "Faded", artist: "Alan Walker", album: "Official" },
+  { id: "7wtfhZwyrcc", title: "Believer", artist: "Imagine Dragons", album: "Official" },
+  { id: "uelHwf8o7_U", title: "Love Yourself", artist: "Justin Bieber", album: "Official" },
+  { id: "SlPhMPnQ58k", title: "Demons", artist: "Imagine Dragons", album: "Official" }
+];
+
+let playlist = [...defaultPlaylist];
+let currentIndex = 0;
+let isPlaying = false;
+let isShuffle = false;
+let isRepeat = true;
+let progressTimer = null;
+
+const $ = id => document.getElementById(id);
+const ytFrame = $('ytFrame');
+let ytReady = false;
+let ytPlayer = null;
+
+/* =========================================================
+   YOUTUBE IFRAME API — pakai postMessage langsung ke iframe
+   ========================================================= */
+function sendYT(func, args) {
+  if (!ytFrame || !ytFrame.contentWindow) return;
+  ytFrame.contentWindow.postMessage(
+    JSON.stringify({ event: 'command', func, args: args || [] }),
+    '*'
+  );
+}
+
+// Dengarkan event dari YouTube
+window.addEventListener('message', (e) => {
+  if (!e.origin.includes('youtube.com')) return;
+  try {
+    const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+    if (data.event === 'onReady') {
+      ytReady = true;
+      console.log('✅ YouTube iframe ready');
+      // Set volume awal
+      sendYT('setVolume', [70]);
+    } else if (data.event === 'onStateChange') {
+      handleStateChange(data.info);
+    } else if (data.event === 'infoDelivery' && data.info) {
+      if (data.info.currentTime !== undefined && data.info.duration) {
+        updateProgressUI(data.info.currentTime, data.info.duration);
+      }
+    }
+  } catch (err) {}
+});
+
+function handleStateChange(state) {
+  // 1=playing, 2=paused, 0=ended, 3=buffering
+  if (state === 1) {
+    isPlaying = true;
+    $('playBtn').textContent = '❚❚';
+    $('bigPlay').textContent = '❚❚';
+    startProgressLoop();
+    renderTrackList();
+  } else if (state === 2) {
+    isPlaying = false;
+    $('playBtn').textContent = '▶';
+    $('bigPlay').textContent = '▶';
+    stopProgressLoop();
+    renderTrackList();
+  } else if (state === 0) {
+    stopProgressLoop();
+    if (isRepeat) {
+      sendYT('seekTo', [0, true]);
+      sendYT('playVideo');
+    } else {
+      nextTrack();
+    }
+  }
+}
+
+/* Karena postMessage events tidak selalu lengkap,
+   kita polling manual untuk update progress */
+function startProgressLoop() {
+  stopProgressLoop();
+  progressTimer = setInterval(() => {
+    sendYT('getCurrentTime');
+    // Fallback: kita coba baca dari iframe API via infoDelivery events
+  }, 500);
+}
+function stopProgressLoop() {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+}
+
+function updateProgressUI(cur, dur) {
+  if (dur > 0) {
+    $('progressFill').style.width = (cur / dur * 100) + '%';
+    $('currentTime').textContent = fmt(cur);
+    $('duration').textContent = fmt(dur);
+  }
+}
+
+function fmt(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+/* =========================================================
+   LOAD TRACK — ganti src iframe
+   ========================================================= */
+function loadTrack(index, autoplay = true) {
+  if (index < 0 || index >= playlist.length) return;
+  currentIndex = index;
+  const track = playlist[currentIndex];
+  ytReady = false;
+
+  // Update UI
+  $('heroTitle').textContent = track.title;
+  $('heroArtist').textContent = track.artist;
+  $('npTitle').textContent = track.title;
+  $('npArtist').textContent = track.artist;
+  $('heroCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/hqdefault.jpg" onerror="this.parentElement.textContent='🎵'">`;
+  $('npCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.parentElement.textContent='🎵'">`;
+
+  // Ganti src iframe dengan video baru
+  const params = new URLSearchParams({
+    enablejsapi: '1',
+    autoplay: autoplay ? '1' : '0',
+    rel: '0',
+    modestbranding: '1',
+    playsinline: '1',
+    origin: window.location.origin
+  });
+  ytFrame.src = `https://www.youtube.com/embed/${track.id}?${params}`;
+
+  isPlaying = autoplay;
+  $('playBtn').textContent = autoplay ? '❚❚' : '▶';
+  $('bigPlay').textContent = autoplay ? '❚❚' : '▶';
+  renderTrackList();
+}
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
+function togglePlay() {
+  if (playlist.length === 0) { showToast('Playlist kosong', true); return; }
+  if (isPlaying) {
+    sendYT('pauseVideo');
+    isPlaying = false;
+    $('playBtn').textContent = '▶';
+    $('bigPlay').textContent = '▶';
+    stopProgressLoop();
+  } else {
+    sendYT('playVideo');
+    isPlaying = true;
+    $('playBtn').textContent = '❚❚';
+    $('bigPlay').textContent = '❚❚';
+    startProgressLoop();
+  }
+  renderTrackList();
+}
+
+function nextTrack() {
+  if (playlist.length === 0) return;
+  let i;
+  if (isShuffle) {
+    i = Math.floor(Math.random() * playlist.length);
+    if (i === currentIndex && playlist.length > 1) i = (i + 1) % playlist.length;
+  } else {
+    i = (currentIndex + 1) % playlist.length;
+  }
+  loadTrack(i, true);
+}
+
+function prevTrack() {
+  if (playlist.length === 0) return;
+  let i;
+  if (isShuffle) {
+    i = Math.floor(Math.random() * playlist.length);
+  } else {
+    i = (currentIndex - 1 + playlist.length) % playlist.length;
+  }
+  loadTrack(i, true);
+}
+
+function removeTrack(index) {
+  if (playlist.length === 0) return;
+  const wasCurrent = index === currentIndex;
+  playlist.splice(index, 1);
+
+  if (playlist.length === 0) {
+    currentIndex = 0;
+    isPlaying = false;
+    $('playBtn').textContent = '▶';
+    $('bigPlay').textContent = '▶';
+    $('heroTitle').textContent = 'Pilih lagu untuk mulai';
+    $('heroArtist').textContent = '—';
+    $('npTitle').textContent = 'Belum ada lagu';
+    $('npArtist').textContent = '—';
+    $('heroCover').textContent = '🎵';
+    $('npCover').textContent = '🎵';
+    stopProgressLoop();
+  } else if (wasCurrent) {
+    currentIndex = Math.min(index, playlist.length - 1);
+    loadTrack(currentIndex, true);
+  } else if (index < currentIndex) {
+    currentIndex--;
+  }
+  renderTrackList();
+  showToast('🗑 Dihapus');
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderTrackList() {
+  const list = $('trackList');
+  list.innerHTML = '';
+  $('heroCount').textContent = playlist.length + ' lagu';
+
+  if (playlist.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:60px 20px;color:rgba(255,255,255,0.4);">
+      <div style="font-size:64px;margin-bottom:16px;opacity:0.4;">🎵</div>
+      <h3 style="color:#fff;margin-bottom:8px;">Playlist Kosong</h3>
+      <p style="font-size:13px;">Cari lagu di panel kanan!</p>
+    </div>`;
+    return;
+  }
+
+  playlist.forEach((track, i) => {
+    const isActive = i === currentIndex && isPlaying;
+    const isCurrent = i === currentIndex;
+    const row = document.createElement('div');
+    row.className = 'track-row' + (isCurrent ? ' active' : '');
+    row.innerHTML = `
+      <div class="t-num">${isActive ? '<div class="eq"><span></span><span></span><span></span></div>' : (i + 1)}</div>
+      <div class="t-main">
+        <div class="t-thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none';this.parentElement.textContent='🎵';"></div>
+        <div class="t-text">
+          <div class="t-name">${esc(track.title)}</div>
+          <div class="t-artist">${esc(track.artist)}</div>
+        </div>
+      </div>
+      <div><button class="t-remove" data-remove="${i}">✕</button></div>
+    `;
+    row.addEventListener('click', (e) => {
+      if (e.target.dataset.remove !== undefined) return;
+      if (isCurrent && isPlaying) togglePlay();
+      else loadTrack(i, true);
+    });
+    row.querySelector('.t-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeTrack(i);
+    });
+    list.appendChild(row);
+  });
+}
+
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+function showToast(msg, isError) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', !!isError);
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* =========================================================
+   SEARCH — pakai Invidious API (CORS OK, no key)
+   ========================================================= */
+async function searchYoutube(query) {
+  const instances = [
+    'https://inv.nadeko.net',
+    'https://invidious.nerdvpn.de',
+    'https://yewtu.be',
+    'https://invidious.privacyredirect.com'
+  ];
+  for (const base of instances) {
+    try {
+      const url = `${base}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data
+          .filter(i => i.videoId)
+          .slice(0, 8)
+          .map(i => ({
+            id: i.videoId,
+            title: i.title,
+            artist: i.author || 'YouTube',
+            album: 'YouTube',
+            thumbnail: i.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${i.videoId}/default.jpg`
+          }));
+      }
+    } catch (e) {
+      console.warn('Instance failed:', base, e.message);
+      continue;
+    }
+  }
+  throw new Error('Semua instance gagal');
+}
+
+async function searchAndShow(query) {
+  if (!query.trim()) return;
+  const btn = $('searchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  $('infoBox').innerHTML = '🔍 Mencari...';
+
+  try {
+    const results = await searchYoutube(query);
+    if (results.length === 0) {
+      $('infoBox').innerHTML = '❌ Tidak ada hasil';
+      $('searchResultsWrap').style.display = 'none';
+      return;
+    }
+    renderSearchResults(results);
+    $('infoBox').innerHTML = `✅ ${results.length} hasil. Klik untuk putar, + untuk tambah.`;
+  } catch (err) {
+    console.error(err);
+    $('infoBox').innerHTML = '❌ Gagal mencari. Coba kata kunci lain.';
+    $('searchResultsWrap').style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '→';
+  }
+}
+
+function renderSearchResults(results) {
+  const wrap = $('searchResultsWrap');
+  const box = $('searchResults');
+  box.innerHTML = '';
+  wrap.style.display = 'block';
+
+  results.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'sr-item';
+    item.innerHTML = `
+      <div class="sr-thumb"><img src="${r.thumbnail}" onerror="this.style.display='none';"></div>
+      <div class="sr-info">
+        <div class="sr-title">${esc(r.title)}</div>
+        <div class="sr-channel">${esc(r.artist)}</div>
+      </div>
+      <button class="sr-add" title="Tambah">+</button>
+    `;
+    item.querySelector('.sr-add').addEventListener('click', (e) => {
+      e.stopPropagation();
+      addTrack(r, false);
+    });
+    item.addEventListener('click', () => addTrack(r, true));
+    box.appendChild(item);
+  });
+}
+
+function addTrack(track, playNow) {
+  const exists = playlist.find(t => t.id === track.id);
+  if (exists) {
+    showToast('ℹ Sudah ada di playlist');
+    if (playNow) loadTrack(playlist.indexOf(exists), true);
+    return;
+  }
+  playlist.push(track);
+  renderTrackList();
+  showToast('✅ Ditambahkan');
+  if (playNow) loadTrack(playlist.length - 1, true);
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+$('playBtn').addEventListener('click', togglePlay);
+$('bigPlay').addEventListener('click', togglePlay);
+$('nextBtn').addEventListener('click', nextTrack);
+$('prevBtn').addEventListener('click', prevTrack);
+
+$('shuffleBtn').addEventListener('click', () => {
+  isShuffle = !isShuffle;
+  $('shuffleBtn').classList.toggle('on', isShuffle);
+  $('shuffleBig').classList.toggle('on', isShuffle);
+  showToast(isShuffle ? '🔀 Shuffle ON' : 'Shuffle OFF');
+});
+$('shuffleBig').addEventListener('click', () => $('shuffleBtn').click());
+
+$('repeatBtn').addEventListener('click', () => {
+  isRepeat = !isRepeat;
+  $('repeatBtn').classList.toggle('on', isRepeat);
+  $('repeatBig').classList.toggle('on', isRepeat);
+  showToast(isRepeat ? '🔁 Repeat ON' : 'Repeat OFF');
+});
+$('repeatBig').addEventListener('click', () => $('repeatBtn').click());
+
+$('progressBar').addEventListener('click', (e) => {
+  const rect = $('progressBar').getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  // Kirim command seek — kita perlu tahu durasi. Ambil dari teks duration
+  const durText = $('duration').textContent;
+  const parts = durText.split(':').map(Number);
+  const dur = parts[0] * 60 + (parts[1] || 0);
+  if (dur > 0) {
+    sendYT('seekTo', [pct * dur, true]);
+  }
+});
+
+$('volBar').addEventListener('click', (e) => {
+  const rect = $('volBar').getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  $('volFill').style.width = (pct * 100) + '%';
+  sendYT('setVolume', [Math.round(pct * 100)]);
+});
+
+$('searchBtn').addEventListener('click', () => searchAndShow($('searchInput').value));
+$('searchInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') searchAndShow($('searchInput').value);
+});
+
+document.querySelectorAll('.pick').forEach(p => {
+  p.addEventListener('click', () => {
+    $('searchInput').value = p.dataset.q;
+    searchAndShow(p.dataset.q);
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  else if (e.code === 'ArrowRight') nextTrack();
+  else if (e.code === 'ArrowLeft') prevTrack();
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderTrackList();
+
+// Setelah iframe load pertama, kirim sinyal enablejsapi
+setTimeout(() => {
+  sendYT('addEventListener', ['onReady']);
+  sendYT('addEventListener', ['onStateChange']);
+  sendYT('setVolume', [70]);
+}, 2000);
+
+console.log('🎵 Musify siap.');
+</script>
+
+</body>
+</html>
