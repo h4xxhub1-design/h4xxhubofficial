@@ -3,55 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Musify Player</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<title>Musify — Spotify Style Player</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
   body { background:#000; color:#fff; min-height:100vh; overflow-x:hidden; }
 
+  /* ==================================================
+     LOGIN SCREEN
+     ================================================== */
+  .login-screen {
+    position:fixed; inset:0; z-index:2000;
+    background:linear-gradient(180deg,#1DB954 0%,#121212 40%,#000 100%);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    transition:opacity 0.4s, visibility 0.4s;
+  }
+  .login-screen.hide { opacity:0; visibility:hidden; pointer-events:none; }
+
+  .login-card {
+    width:100%; max-width:440px;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:20px;
+    padding:40px 32px;
+    text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,0.8);
+  }
+  .login-logo {
+    width:64px; height:64px; background:#1DB954; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:32px; margin:0 auto 20px;
+    box-shadow:0 10px 30px rgba(29,185,84,0.6);
+  }
+  .login-title { font-size:28px; font-weight:900; letter-spacing:-1px; margin-bottom:8px; }
+  .login-sub { font-size:14px; color:rgba(255,255,255,0.6); margin-bottom:32px; line-height:1.5; }
+
+  .login-btn {
+    width:100%; padding:14px 20px;
+    border-radius:50px; border:1px solid rgba(255,255,255,0.2);
+    background:rgba(255,255,255,0.05);
+    color:#fff; font-size:14px; font-weight:600;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    gap:12px; margin-bottom:12px;
+    transition:all 0.2s; font-family:inherit;
+  }
+  .login-btn:hover { background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+  .login-btn.google { background:#fff; color:#000; border-color:#fff; }
+  .login-btn.google:hover { background:#f0f0f0; }
+  .login-btn.facebook { background:#1877F2; border-color:#1877F2; }
+  .login-btn.facebook:hover { background:#0d65d9; }
+  .login-btn.guest { background:transparent; border-color:rgba(255,255,255,0.15); font-size:13px; opacity:0.8; }
+
+  .login-divider {
+    display:flex; align-items:center; gap:12px;
+    color:rgba(255,255,255,0.4); font-size:12px; margin:20px 0;
+  }
+  .login-divider::before, .login-divider::after {
+    content:''; flex:1; height:1px; background:rgba(255,255,255,0.1);
+  }
+
+  .login-legal {
+    font-size:11px; color:rgba(255,255,255,0.4);
+    margin-top:20px; line-height:1.6;
+  }
+  .login-legal a { color:#1DB954; text-decoration:none; }
+
+  /* ==================================================
+     APP LAYOUT
+     ================================================== */
   .app {
-    display:grid;
+    display:none;
     grid-template-columns: 240px 1fr 320px;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: 1fr 90px;
     grid-template-areas: "sidebar main right" "player player player";
     height:100vh; gap:8px; padding:8px;
   }
+  .app.show { display:grid; }
 
   /* SIDEBAR */
   .sidebar {
     grid-area:sidebar; background:#121212; border-radius:8px;
     padding:16px 8px; overflow-y:auto;
-    display:flex; flex-direction:column; gap:16px;
+    display:flex; flex-direction:column; gap:12px;
   }
-  .logo-row { display:flex; align-items:center; gap:10px; padding:0 8px 8px; }
+  .sidebar::-webkit-scrollbar { width:6px; }
+  .sidebar::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+
+  .logo-row { display:flex; align-items:center; gap:10px; padding:8px 12px 12px; }
   .logo-icon {
     width:36px; height:36px; background:#1DB954; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; font-size:18px;
-    box-shadow:0 4px 16px rgba(29,185,84,0.5);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; box-shadow:0 4px 16px rgba(29,185,84,0.5);
   }
   .logo-text { font-size:20px; font-weight:800; }
+
   .nav-item {
-    display:flex; align-items:center; gap:12px; padding:10px 12px;
-    border-radius:6px; color:rgba(255,255,255,0.7);
-    font-size:14px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:14px;
+    padding:10px 14px; border-radius:6px;
+    color:rgba(255,255,255,0.7); font-size:14px; font-weight:600;
+    cursor:pointer; transition:all 0.15s;
   }
-  .nav-item:hover, .nav-item.active { color:#fff; background:rgba(255,255,255,0.08); }
+  .nav-item:hover { color:#fff; background:rgba(255,255,255,0.05); }
+  .nav-item.active { color:#fff; background:rgba(255,255,255,0.1); }
+  .nav-item .ico { font-size:18px; width:22px; text-align:center; }
+
   .divider { height:1px; background:rgba(255,255,255,0.08); margin:4px 8px; }
+
   .pl-label {
     font-size:11px; font-weight:700; letter-spacing:1.5px;
     text-transform:uppercase; color:rgba(255,255,255,0.5);
-    padding:0 12px; margin-bottom:8px;
+    padding:0 14px; margin-bottom:6px;
   }
   .pl-item {
     display:flex; align-items:center; gap:12px;
     padding:8px 12px; border-radius:6px; cursor:pointer;
   }
   .pl-item:hover { background:rgba(255,255,255,0.05); }
+  .pl-item.active { background:rgba(29,185,84,0.15); }
   .pl-thumb {
     width:40px; height:40px; border-radius:4px; flex-shrink:0;
-    background:linear-gradient(135deg,#1DB954,#0d7a35);
-    display:flex; align-items:center; justify-content:center; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; overflow:hidden;
   }
+  .pl-thumb img { width:100%; height:100%; object-fit:cover; }
   .pl-name { font-size:13px; font-weight:600; }
   .pl-sub { font-size:11px; color:rgba(255,255,255,0.5); margin-top:2px; }
 
@@ -66,24 +142,48 @@
   .main-header {
     position:sticky; top:0; z-index:10;
     padding:16px 28px;
-    background:linear-gradient(180deg,rgba(29,185,84,0.5),rgba(18,18,18,0.95) 80%);
+    background:linear-gradient(180deg,rgba(29,185,84,0.4),rgba(18,18,18,0.95) 80%);
     backdrop-filter:blur(20px);
     display:flex; align-items:center; justify-content:space-between;
     border-bottom:1px solid rgba(255,255,255,0.05);
   }
-
-  /* VIDEO EMBED */
-  .video-section {
-    padding:20px 28px 0;
+  .page-title { font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+  .header-actions { display:flex; align-items:center; gap:10px; }
+  .hdr-btn {
+    width:36px; height:36px; border-radius:50%;
+    background:rgba(255,255,255,0.05); border:none; color:#fff;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:14px;
   }
+  .hdr-btn:hover { background:rgba(255,255,255,0.12); }
+  .user-chip {
+    display:flex; align-items:center; gap:8px;
+    padding:5px 12px 5px 5px; border-radius:20px;
+    background:rgba(0,0,0,0.6); cursor:pointer;
+    font-size:13px; font-weight:600;
+    transition:all 0.15s;
+  }
+  .user-chip:hover { background:rgba(0,0,0,0.8); }
+  .user-chip .avatar {
+    width:28px; height:28px; border-radius:50%;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; overflow:hidden; font-weight:700;
+  }
+  .user-chip .avatar img { width:100%; height:100%; object-fit:cover; }
+
+  /* PAGE CONTENT */
+  .page { display:none; padding-bottom:24px; }
+  .page.active { display:block; }
+
+  /* VIDEO EMBED (di Home) */
+  .video-section { padding:20px 28px 0; }
   .video-wrap {
     width:100%; aspect-ratio:16/9; background:#000;
     border-radius:12px; overflow:hidden;
     box-shadow:0 15px 50px rgba(0,0,0,0.7);
   }
-  .video-wrap iframe {
-    width:100%; height:100%; border:0; display:block;
-  }
+  .video-wrap iframe { width:100%; height:100%; border:0; display:block; }
 
   /* HERO */
   .hero { padding:24px 28px 20px; display:flex; align-items:flex-end; gap:20px; }
@@ -103,7 +203,7 @@
     line-height:1.15; margin:8px 0 10px;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
-  .hero-meta { display:flex; align-items:center; gap:8px; font-size:13px; color:rgba(255,255,255,0.7); }
+  .hero-meta { display:flex; align-items:center; gap:8px; font-size:13px; color:rgba(255,255,255,0.7); flex-wrap:wrap; }
   .hero-meta .artist { font-weight:700; color:#fff; }
   .hero-meta .dot { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.5); }
 
@@ -114,25 +214,35 @@
     font-size:20px; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 8px 24px rgba(29,185,84,0.4);
+    transition:transform 0.15s;
   }
   .play-big:hover { transform:scale(1.06); }
   .icon-btn {
     background:transparent; border:none; color:rgba(255,255,255,0.7);
     font-size:20px; cursor:pointer; padding:6px;
+    transition:all 0.15s;
   }
-  .icon-btn:hover { color:#fff; }
+  .icon-btn:hover { color:#fff; transform:scale(1.1); }
   .icon-btn.on { color:#1DB954; }
+
+  /* SECTION TITLE */
+  .section-title {
+    padding:20px 28px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title h2 { font-size:20px; font-weight:800; letter-spacing:-0.5px; }
 
   /* TRACK LIST */
   .track-list-header {
-    display:grid; grid-template-columns:40px 1fr 50px;
+    display:grid; grid-template-columns:40px 1fr 60px;
     gap:16px; padding:0 28px 12px;
     border-bottom:1px solid rgba(255,255,255,0.08);
     color:rgba(255,255,255,0.5); font-size:12px; font-weight:600;
     text-transform:uppercase; letter-spacing:1.2px;
+    margin:0 12px;
   }
   .track-row {
-    display:grid; grid-template-columns:40px 1fr 50px;
+    display:grid; grid-template-columns:40px 1fr 60px;
     gap:16px; align-items:center; padding:8px 28px;
     border-radius:6px; cursor:pointer;
     margin:0 12px; transition:background 0.15s;
@@ -140,7 +250,7 @@
   .track-row:hover { background:rgba(255,255,255,0.08); }
   .track-row.active { background:rgba(29,185,84,0.15); }
   .track-row.active .t-name, .track-row.active .t-num { color:#1DB954; }
-  .t-num { text-align:center; color:rgba(255,255,255,0.5); font-size:15px; }
+  .t-num { text-align:center; color:rgba(255,255,255,0.5); font-size:15px; font-variant-numeric:tabular-nums; }
   .t-main { display:flex; align-items:center; gap:14px; min-width:0; }
   .t-thumb {
     width:44px; height:44px; border-radius:4px; flex-shrink:0;
@@ -154,13 +264,17 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .t-artist { font-size:13px; color:rgba(255,255,255,0.6);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .t-remove {
+  .t-actions { display:flex; justify-content:flex-end; gap:6px; }
+  .t-btn {
     background:transparent; border:none; color:rgba(255,255,255,0.4);
-    cursor:pointer; font-size:14px; opacity:0; transition:opacity 0.15s;
+    cursor:pointer; font-size:14px; opacity:0;
     width:28px; height:28px; border-radius:50%;
+    transition:all 0.15s;
   }
-  .track-row:hover .t-remove { opacity:1; }
-  .t-remove:hover { color:#ff4757; }
+  .track-row:hover .t-btn { opacity:1; }
+  .t-btn:hover { color:#1DB954; background:rgba(29,185,84,0.1); }
+  .t-btn.del:hover { color:#ff4757; background:rgba(255,71,87,0.1); }
+  .t-btn.liked { opacity:1; color:#1DB954; }
 
   .eq { display:flex; gap:2px; align-items:flex-end; height:14px; justify-content:center; }
   .eq span { width:3px; background:#1DB954; border-radius:2px; animation:eq 0.8s infinite; }
@@ -169,11 +283,48 @@
   .eq span:nth-child(3){ animation-delay:0.4s; }
   @keyframes eq { 0%,100%{height:4px;} 50%{height:14px;} }
 
+  /* CARD GRID (Home) */
+  .card-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+    gap:16px; padding:0 28px;
+  }
+  .card {
+    background:rgba(255,255,255,0.04);
+    border-radius:8px; padding:16px;
+    cursor:pointer; transition:all 0.2s;
+    position:relative;
+  }
+  .card:hover { background:rgba(255,255,255,0.1); }
+  .card-img {
+    width:100%; aspect-ratio:1; border-radius:6px;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px; margin-bottom:12px; overflow:hidden;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  }
+  .card-img img { width:100%; height:100%; object-fit:cover; }
+  .card-title { font-size:14px; font-weight:700; margin-bottom:4px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-sub { font-size:12px; color:rgba(255,255,255,0.5);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* CHIP ROW (genre filter) */
+  .chip-row { display:flex; gap:8px; padding:0 28px 16px; flex-wrap:wrap; }
+  .chip {
+    padding:8px 16px; border-radius:20px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.1);
+    color:#fff; font-size:13px; font-weight:600;
+    cursor:pointer; transition:all 0.15s; font-family:inherit;
+  }
+  .chip:hover { background:rgba(255,255,255,0.15); }
+  .chip.active { background:#1DB954; color:#000; border-color:#1DB954; }
+
   /* RIGHT PANEL */
   .right-panel {
     grid-area:right; background:#121212; border-radius:8px;
     padding:20px; overflow-y:auto;
-    display:flex; flex-direction:column; gap:20px;
+    display:flex; flex-direction:column; gap:18px;
   }
   .right-panel::-webkit-scrollbar { width:6px; }
   .right-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
@@ -189,8 +340,8 @@
   .search-box input::placeholder { color:rgba(255,255,255,0.4); }
   .search-box button {
     width:40px; height:40px; border-radius:50%; border:none;
-    background:#1DB954; color:#000; font-size:15px;
-    cursor:pointer; flex-shrink:0; font-weight:800;
+    background:#1DB954; color:#000; font-size:15px; font-weight:800;
+    cursor:pointer; flex-shrink:0;
   }
   .search-box button:hover { transform:scale(1.08); }
   .search-box button:disabled { opacity:0.5; }
@@ -203,7 +354,8 @@
     background:rgba(255,255,255,0.06);
     border:1px solid rgba(255,255,255,0.08);
     color:#fff; font-size:11px; font-weight:600;
-    cursor:pointer; text-align:left;
+    cursor:pointer; text-align:left; font-family:inherit;
+    transition:all 0.15s;
   }
   .pick:hover { background:rgba(255,255,255,0.12); transform:translateY(-2px); }
   .pick span { display:block; font-size:18px; margin-bottom:4px; }
@@ -239,6 +391,71 @@
     color:rgba(255,255,255,0.8); line-height:1.5;
   }
 
+  /* PROFILE PAGE */
+  .profile-header {
+    display:flex; align-items:center; gap:24px;
+    padding:32px 28px;
+  }
+  .profile-avatar {
+    width:140px; height:140px; border-radius:50%;
+    background:linear-gradient(135deg,#1DB954,#0d7a35);
+    display:flex; align-items:center; justify-content:center;
+    font-size:64px; overflow:hidden;
+    box-shadow:0 15px 50px rgba(0,0,0,0.6);
+  }
+  .profile-avatar img { width:100%; height:100%; object-fit:cover; }
+  .profile-info { flex:1; }
+  .profile-type { font-size:12px; font-weight:600; letter-spacing:1.5px;
+    text-transform:uppercase; color:rgba(255,255,255,0.6); }
+  .profile-name { font-size:48px; font-weight:900; letter-spacing:-2px; margin:8px 0 16px; }
+  .profile-stats { display:flex; gap:20px; font-size:14px; color:rgba(255,255,255,0.7); }
+  .profile-stats b { color:#fff; }
+
+  .profile-menu {
+    display:flex; flex-direction:column; gap:8px;
+    padding:0 28px;
+  }
+  .menu-item {
+    display:flex; align-items:center; gap:16px;
+    padding:16px 20px; border-radius:10px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.06);
+    cursor:pointer; transition:all 0.15s;
+  }
+  .menu-item:hover { background:rgba(255,255,255,0.08); }
+  .menu-icon {
+    width:40px; height:40px; border-radius:50%;
+    background:rgba(29,185,84,0.15);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
+  }
+  .menu-text { flex:1; }
+  .menu-title { font-size:14px; font-weight:700; margin-bottom:2px; }
+  .menu-sub { font-size:12px; color:rgba(255,255,255,0.5); }
+  .menu-arrow { color:rgba(255,255,255,0.3); font-size:20px; }
+
+  /* Koleksi page */
+  .collection-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:16px; padding:0 28px;
+  }
+  .collection-card {
+    background:rgba(255,255,255,0.04);
+    border-radius:8px; padding:14px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .collection-card:hover { background:rgba(255,255,255,0.1); }
+  .collection-card .cc-img {
+    width:100%; aspect-ratio:1; border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:40px; margin-bottom:10px; overflow:hidden;
+  }
+  .collection-card .cc-img img { width:100%; height:100%; object-fit:cover; }
+  .collection-card .cc-title { font-size:14px; font-weight:700; margin-bottom:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .collection-card .cc-sub { font-size:12px; color:rgba(255,255,255,0.5);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
   /* PLAYER BOTTOM */
   .player {
     grid-area:player; background:#181818; border-radius:8px;
@@ -259,14 +476,20 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .np-artist { font-size:12px; color:rgba(255,255,255,0.6);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+  .np-like {
+    background:transparent; border:none; color:rgba(255,255,255,0.5);
+    font-size:18px; cursor:pointer; padding:4px;
+  }
+  .np-like.liked { color:#1DB954; }
 
   .np-center { display:flex; flex-direction:column; align-items:center; gap:8px; }
   .np-controls { display:flex; align-items:center; gap:16px; }
   .np-btn {
     background:transparent; border:none; color:rgba(255,255,255,0.7);
     font-size:18px; cursor:pointer; padding:4px;
+    transition:all 0.15s;
   }
-  .np-btn:hover { color:#fff; }
+  .np-btn:hover { color:#fff; transform:scale(1.1); }
   .np-btn.on { color:#1DB954; }
   .np-btn.play {
     width:40px; height:40px; border-radius:50%;
@@ -274,7 +497,7 @@
   }
 
   .np-progress { display:flex; align-items:center; gap:10px; width:100%; }
-  .np-time { font-size:11px; color:rgba(255,255,255,0.5); min-width:38px; text-align:center; }
+  .np-time { font-size:11px; color:rgba(255,255,255,0.5); min-width:38px; text-align:center; font-variant-numeric:tabular-nums; }
   .bar-wrap { flex:1; height:4px; background:rgba(255,255,255,0.15);
     border-radius:4px; cursor:pointer; overflow:hidden; }
   .bar-fill { height:100%; width:0%; background:#fff; border-radius:4px; }
@@ -285,14 +508,13 @@
     border-radius:4px; cursor:pointer; overflow:hidden; }
   .vol-fill { height:100%; width:70%; background:#fff; border-radius:4px; }
 
-  /* YouTube iframe hidden - tapi iframe TIDAK BISA di-hide opacity 0 di beberapa browser
-     untuk audio-only, jadi kita tampilkan video di section atas */
-
+  /* TOAST */
   .toast {
     position:fixed; bottom:110px; left:50%; transform:translateX(-50%) translateY(20px);
     background:rgba(29,185,84,0.95); color:#000; padding:10px 20px;
     border-radius:24px; font-size:13px; font-weight:700;
-    opacity:0; pointer-events:none; transition:all 0.3s; z-index:999;
+    opacity:0; pointer-events:none; transition:all 0.3s; z-index:2500;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
   }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .toast.error { background:rgba(255,71,87,0.95); color:#fff; }
@@ -314,15 +536,61 @@
     .video-section { padding:12px 14px 0; }
     .hero { flex-direction:column; align-items:flex-start; padding:16px 14px; }
     .hero-title { font-size:22px; }
-    .track-list-header, .track-row { grid-template-columns:32px 1fr 40px; padding-left:14px; padding-right:14px; }
+    .profile-header { flex-direction:column; text-align:center; }
+    .profile-name { font-size:32px; }
+    .track-list-header, .track-row { grid-template-columns:32px 1fr 50px; padding-left:14px; padding-right:14px; }
     .player { grid-template-columns:1fr; gap:6px; }
     .np-left, .np-right { display:none; }
+    .card-grid, .collection-grid, .chip-row, .section-title { padding-left:14px; padding-right:14px; }
   }
 </style>
 </head>
 <body>
 
-<div class="app">
+<!-- ==================================================
+     LOGIN SCREEN
+     ================================================== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🎵</div>
+    <div class="login-title">Musify</div>
+    <div class="login-sub">Masuk untuk mulai mendengarkan<br>jutaan lagu tanpa batas</div>
+
+    <button class="login-btn google" id="loginGoogle">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l4.9-4.9C33 6.8 28.7 5 24 5 12.9 5 4 13.9 4 25s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 15.4l5.7 4.2C13.7 15.2 18.5 12 24 12c3.1 0 5.8 1.2 7.9 3.1l4.9-4.9C33 6.8 28.7 5 24 5 16.3 5 9.7 9.4 6.3 15.4z"/>
+        <path fill="#4CAF50" d="M24 45c4.6 0 8.8-1.8 11.9-4.6l-5.5-4.6c-1.8 1.4-4 2.2-6.4 2.2-5.2 0-9.6-3.3-11.3-7.9l-5.7 4.4C9.6 40.6 16.2 45 24 45z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.2-2.2 4.1-4 5.4l5.5 4.6C40.9 34.9 44 30.4 44 25c0-1.3-.1-2.6-.4-3.5z"/>
+      </svg>
+      Lanjutkan dengan Google
+    </button>
+
+    <button class="login-btn facebook" id="loginFacebook">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+        <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.89v2.25h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07z"/>
+      </svg>
+      Lanjutkan dengan Facebook
+    </button>
+
+    <div class="login-divider">atau</div>
+
+    <button class="login-btn guest" id="loginGuest">
+      👤 Lanjutkan sebagai Tamu
+    </button>
+
+    <div class="login-legal">
+      Dengan melanjutkan, kamu menyetujui<br>
+      <a href="#">Syarat & Ketentuan</a> dan <a href="#">Kebijakan Privasi</a> Musify.
+    </div>
+  </div>
+</div>
+
+<!-- ==================================================
+     APP
+     ================================================== -->
+<div class="app" id="app">
+
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="logo-row">
@@ -330,68 +598,194 @@
       <div class="logo-text">Musify</div>
     </div>
     <div>
-      <div class="nav-item active">🏠 Beranda</div>
-      <div class="nav-item">🔍 Cari</div>
-      <div class="nav-item">📚 Koleksi</div>
+      <div class="nav-item active" data-page="home"><span class="ico">🏠</span>Beranda</div>
+      <div class="nav-item" data-page="search"><span class="ico">🔍</span>Cari</div>
+      <div class="nav-item" data-page="collection"><span class="ico">📚</span>Koleksi Kamu</div>
+      <div class="nav-item" data-page="profile"><span class="ico">👤</span>Profile</div>
     </div>
     <div class="divider"></div>
     <div>
       <div class="pl-label">Playlist</div>
-      <div class="pl-item"><div class="pl-thumb">❤️</div><div><div class="pl-name">Favorit</div><div class="pl-sub">Auto</div></div></div>
-      <div class="pl-item"><div class="pl-thumb">🔥</div><div><div class="pl-name">Trending</div><div class="pl-sub">Update</div></div></div>
-      <div class="pl-item"><div class="pl-thumb">🌙</div><div><div class="pl-name">Chill</div><div class="pl-sub">Santai</div></div></div>
+      <div class="pl-item" data-playlist="indo"><div class="pl-thumb" style="background:linear-gradient(135deg,#e91e63,#c2185b);">🇮🇩</div><div><div class="pl-name">Indo Populer</div><div class="pl-sub">Top hits Indonesia</div></div></div>
+      <div class="pl-item" data-playlist="barat"><div class="pl-thumb" style="background:linear-gradient(135deg,#3f51b5,#1a237e);">🌍</div><div><div class="pl-name">Barat Hits</div><div class="pl-sub">Global top songs</div></div></div>
+      <div class="pl-item" data-playlist="chill"><div class="pl-thumb" style="background:linear-gradient(135deg,#00bcd4,#0097a7);">🌙</div><div><div class="pl-name">Chill Vibes</div><div class="pl-sub">Santai & nyaman</div></div></div>
+      <div class="pl-item" data-playlist="lofi"><div class="pl-thumb" style="background:linear-gradient(135deg,#9c27b0,#6a1b9a);">☕</div><div><div class="pl-name">Lofi Beats</div><div class="pl-sub">Fokus & belajar</div></div></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="pl-label">Favorit Kamu</div>
+      <div id="favList"></div>
     </div>
   </aside>
 
   <!-- MAIN -->
   <main class="main">
     <div class="main-header">
-      <div style="font-size:18px;font-weight:700;">Musify Player</div>
-      <div style="font-size:13px;opacity:0.7;">🎧 Klik lagu untuk main</div>
-    </div>
-
-    <!-- VIDEO EMBED AREA -->
-    <div class="video-section">
-      <div class="video-wrap">
-        <iframe id="ytFrame" 
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1&rel=0&modestbranding=1&playsinline=1" 
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowfullscreen
-                referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      </div>
-    </div>
-
-    <section class="hero">
-      <div class="hero-cover" id="heroCover">🎵</div>
-      <div class="hero-info">
-        <div class="hero-tag">Sedang Diputar</div>
-        <div class="hero-title" id="heroTitle">Never Gonna Give You Up</div>
-        <div class="hero-meta">
-          <span class="artist" id="heroArtist">Rick Astley</span>
-          <span class="dot"></span>
-          <span id="heroCount">8 lagu</span>
+      <div class="page-title" id="pageTitle">Beranda</div>
+      <div class="header-actions">
+        <div class="user-chip" id="userChip">
+          <div class="avatar" id="userAvatar">U</div>
+          <span id="userName">User</span>
         </div>
       </div>
-    </section>
-
-    <div class="action-bar">
-      <button class="play-big" id="bigPlay">▶</button>
-      <button class="icon-btn" id="shuffleBig">🔀</button>
-      <button class="icon-btn on" id="repeatBig">🔁</button>
     </div>
 
-    <div class="track-list-header">
-      <span>#</span>
-      <span>Judul</span>
-      <span></span>
+    <!-- PAGE: HOME -->
+    <div class="page active" id="page-home">
+      <div class="video-section">
+        <div class="video-wrap">
+          <iframe id="ytFrame" 
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1&rel=0&modestbranding=1&playsinline=1" 
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowfullscreen
+                  referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+      </div>
+
+      <section class="hero">
+        <div class="hero-cover" id="heroCover">🎵</div>
+        <div class="hero-info">
+          <div class="hero-tag">Sedang Diputar</div>
+          <div class="hero-title" id="heroTitle">Pilih lagu untuk mulai</div>
+          <div class="hero-meta">
+            <span class="artist" id="heroArtist">—</span>
+            <span class="dot"></span>
+            <span id="heroCount">0 lagu</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="action-bar">
+        <button class="play-big" id="bigPlay">▶</button>
+        <button class="icon-btn" id="shuffleBig" title="Shuffle">🔀</button>
+        <button class="icon-btn on" id="repeatBig" title="Repeat">🔁</button>
+      </div>
+
+      <div class="section-title">
+        <h2>🎧 Playlist Indo Populer</h2>
+      </div>
+      <div class="chip-row" id="genreChips">
+        <button class="chip active" data-genre="all">Semua</button>
+        <button class="chip" data-genre="pop">Pop</button>
+        <button class="chip" data-genre="dangdut">Dangdut</button>
+        <button class="chip" data-genre="rock">Rock</button>
+        <button class="chip" data-genre="indie">Indie</button>
+      </div>
+
+      <div class="track-list-header">
+        <span>#</span>
+        <span>Judul</span>
+        <span></span>
+      </div>
+      <div id="trackList"></div>
+
+      <div class="section-title" style="margin-top:20px;">
+        <h2>🔥 Playlist Pilihan</h2>
+      </div>
+      <div class="card-grid" id="playlistCards"></div>
     </div>
-    <div id="trackList" style="padding-bottom:24px;"></div>
+
+    <!-- PAGE: SEARCH -->
+    <div class="page" id="page-search">
+      <div style="padding:20px 28px;">
+        <div class="search-box" style="max-width:600px;">
+          <input type="text" id="searchInputPage" placeholder="Cari lagu, artis, atau album...">
+          <button id="searchBtnPage">→</button>
+        </div>
+      </div>
+      <div class="chip-row">
+        <button class="chip" onclick="quickSearch('lagu indonesia populer')">🇮🇩 Indo Populer</button>
+        <button class="chip" onclick="quickSearch('top global hits 2026')">🌍 Global Hits</button>
+        <button class="chip" onclick="quickSearch('kpop hits')">🇰🇷 K-Pop</button>
+        <button class="chip" onclick="quickSearch('lofi beats')">☕ Lofi</button>
+        <button class="chip" onclick="quickSearch('jazz relax')">🎷 Jazz</button>
+        <button class="chip" onclick="quickSearch('rock classics')">🎸 Rock</button>
+      </div>
+      <div class="section-title">
+        <h2 id="searchResultTitle">Hasil Pencarian</h2>
+      </div>
+      <div class="search-results" id="searchResultsPage" style="padding:0 28px; max-height:none;">
+        <div class="info-box">🔍 Ketik sesuatu di kotak pencarian di atas, atau pilih salah satu chip genre.</div>
+      </div>
+    </div>
+
+    <!-- PAGE: COLLECTION -->
+    <div class="page" id="page-collection">
+      <div class="section-title">
+        <h2>📚 Koleksi Kamu</h2>
+      </div>
+      <div class="chip-row">
+        <button class="chip active" data-coll="playlists">Playlist</button>
+        <button class="chip" data-coll="liked">Lagu Disukai</button>
+        <button class="chip" data-coll="recent">Baru Diputar</button>
+      </div>
+      <div class="collection-grid" id="collectionGrid"></div>
+    </div>
+
+    <!-- PAGE: PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar">U</div>
+        <div class="profile-info">
+          <div class="profile-type" id="profileType">Akun Gratis</div>
+          <div class="profile-name" id="profileName">User Musify</div>
+          <div class="profile-stats">
+            <span><b id="statPlaylist">8</b> Playlist</span>
+            <span><b id="statLiked">0</b> Disukai</span>
+            <span><b id="statPlayed">0</b> Diputar</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-menu">
+        <div class="menu-item" onclick="showToast('👤 Mengedit profil...')">
+          <div class="menu-icon">✏️</div>
+          <div class="menu-text">
+            <div class="menu-title">Edit Profil</div>
+            <div class="menu-sub">Ubah nama, foto, dan info akun</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showToast('⭐ Upgrade ke Premium...')">
+          <div class="menu-icon">⭐</div>
+          <div class="menu-text">
+            <div class="menu-title">Upgrade ke Premium</div>
+            <div class="menu-sub">Nikmati musik tanpa iklan & offline</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showToast('⚙️ Pengaturan akun...')">
+          <div class="menu-icon">⚙️</div>
+          <div class="menu-text">
+            <div class="menu-title">Pengaturan Akun</div>
+            <div class="menu-sub">Privasi, notifikasi, dan lainnya</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="showToast('🔔 Notifikasi...')">
+          <div class="menu-icon">🔔</div>
+          <div class="menu-text">
+            <div class="menu-title">Notifikasi</div>
+            <div class="menu-sub">Kelola pemberitahuan musik baru</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="logout()">
+          <div class="menu-icon" style="background:rgba(255,71,87,0.15);">🚪</div>
+          <div class="menu-text">
+            <div class="menu-title" style="color:#ff4757;">Keluar</div>
+            <div class="menu-sub">Logout dari akun ini</div>
+          </div>
+          <div class="menu-arrow">›</div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- RIGHT PANEL -->
   <aside class="right-panel">
     <div>
-      <div class="panel-title">🔍 Cari & Tambah Lagu</div>
+      <div class="panel-title">🔍 Cari & Tambah</div>
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="Ketik judul lagu...">
         <button id="searchBtn">→</button>
@@ -406,36 +800,37 @@
     <div>
       <div class="panel-title">⚡ Pilihan Cepat</div>
       <div class="quick-picks">
-        <button class="pick" data-q="lofi hip hop"><span>☕</span>Lofi</button>
-        <button class="pick" data-q="jazz music"><span>🎷</span>Jazz</button>
-        <button class="pick" data-q="acoustic guitar"><span>🎸</span>Akustik</button>
-        <button class="pick" data-q="nature sounds relax"><span>🌿</span>Relax</button>
+        <button class="pick" data-q="lagu indonesia populer 2026"><span>🇮🇩</span>Indo Populer</button>
+        <button class="pick" data-q="top global hits"><span>🌍</span>Global Hits</button>
+        <button class="pick" data-q="lofi chill"><span>☕</span>Lofi</button>
+        <button class="pick" data-q="lagu tidur relax"><span>😴</span>Tidur</button>
       </div>
     </div>
 
     <div class="info-box" id="infoBox">
       💡 <b>Tips:</b><br>
       • Klik lagu → langsung main<br>
-      • Klik tombol 🔀 untuk shuffle<br>
-      • Cari lagu baru di atas → klik +
+      • Spasi = play/pause<br>
+      • Cari lagu baru → klik +
     </div>
   </aside>
 
-  <!-- BOTTOM PLAYER -->
+  <!-- PLAYER -->
   <div class="player">
     <div class="np-left">
       <div class="np-cover" id="npCover">🎵</div>
       <div class="np-info">
-        <div class="np-title" id="npTitle">Never Gonna Give You Up</div>
-        <div class="np-artist" id="npArtist">Rick Astley</div>
+        <div class="np-title" id="npTitle">Belum ada lagu</div>
+        <div class="np-artist" id="npArtist">—</div>
       </div>
+      <button class="np-like" id="npLike">♡</button>
     </div>
 
     <div class="np-center">
       <div class="np-controls">
         <button class="np-btn" id="shuffleBtn">🔀</button>
         <button class="np-btn" id="prevBtn">⏮</button>
-        <button class="np-btn play" id="playBtn">❚❚</button>
+        <button class="np-btn play" id="playBtn">▶</button>
         <button class="np-btn" id="nextBtn">⏭</button>
         <button class="np-btn on" id="repeatBtn">🔁</button>
       </div>
@@ -457,34 +852,159 @@
 
 <script>
 /* =========================================================
-   PLAYLIST DEFAULT — semua video CONFIRMED EMBEDDABLE
-   (bukan video musik populer yang sering diblokir embed)
+   DATA PLAYLIST
    ========================================================= */
-const defaultPlaylist = [
-  { id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", artist: "Rick Astley", album: "Official" },
-  { id: "9bZkp7q19f0", title: "Gangnam Style", artist: "PSY", album: "Official" },
-  { id: "3JZ_D3ELwOQ", title: "24K Magic", artist: "Bruno Mars", album: "Official" },
-  { id: "kXYiU_JCYtU", title: "Numb", artist: "Linkin Park", album: "Official" },
-  { id: "60ItHLz5WEA", title: "Faded", artist: "Alan Walker", album: "Official" },
-  { id: "7wtfhZwyrcc", title: "Believer", artist: "Imagine Dragons", album: "Official" },
-  { id: "uelHwf8o7_U", title: "Love Yourself", artist: "Justin Bieber", album: "Official" },
-  { id: "SlPhMPnQ58k", title: "Demons", artist: "Imagine Dragons", album: "Official" }
-];
+const PLAYLISTS = {
+  indo: {
+    name: "Indo Populer",
+    emoji: "🇮🇩",
+    color: "linear-gradient(135deg,#e91e63,#c2185b)",
+    tracks: [
+      { id: "fyV4lVdIeUI", title: "Bertaut", artist: "Nadin Amizah", album: "Indo Pop", genre: "indie" },
+      { id: "3HXbfZqHPNs", title: "Hati-Hati di Jalan", artist: "Tulus", album: "Indo Pop", genre: "pop" },
+      { id: "1KzXlHwC0S4", title: "Monokrom", artist: "Tulus", album: "Indo Pop", genre: "pop" },
+      { id: "s9R9bWrTBQg", title: "Kupu-Kupu", artist: "Tiara Andini", album: "Indo Pop", genre: "pop" },
+      { id: "c9XKfFgKcsc", title: "Melukis Senja", artist: "Budi Doremi", album: "Indo Pop", genre: "pop" },
+      { id: "R8y0zKcG7lM", title: "Zona Nyaman", artist: "Fourtwnty", album: "Indo Indie", genre: "indie" },
+      { id: "Mj6pAYWpQjA", title: "Akad", artist: "Payung Teduh", album: "Indo Indie", genre: "indie" },
+      { id: "Cdqo9oPqSvc", title: "Cinta Luar Biasa", artist: "Andmesh", album: "Indo Pop", genre: "pop" }
+    ]
+  },
+  barat: {
+    name: "Barat Hits",
+    emoji: "🌍",
+    color: "linear-gradient(135deg,#3f51b5,#1a237e)",
+    tracks: [
+      { id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", artist: "Rick Astley", album: "80s Hits" },
+      { id: "9bZkp7q19f0", title: "Gangnam Style", artist: "PSY", album: "K-Pop" },
+      { id: "3JZ_D3ELwOQ", title: "24K Magic", artist: "Bruno Mars", album: "Pop" },
+      { id: "kXYiU_JCYtU", title: "Numb", artist: "Linkin Park", album: "Rock" },
+      { id: "60ItHLz5WEA", title: "Faded", artist: "Alan Walker", album: "EDM" },
+      { id: "7wtfhZwyrcc", title: "Believer", artist: "Imagine Dragons", album: "Rock" }
+    ]
+  },
+  chill: {
+    name: "Chill Vibes",
+    emoji: "🌙",
+    color: "linear-gradient(135deg,#00bcd4,#0097a7)",
+    tracks: [
+      { id: "jfKfPfyJRdk", title: "Lofi Hip Hop Radio", artist: "Lofi Girl", album: "Chill" },
+      { id: "5qap5aO4i9A", title: "Lofi Beats to Relax", artist: "Lofi Girl", album: "Chill" },
+      { id: "n61ULEU7CO0", title: "Best Lofi Mix", artist: "Chill Nation", album: "Chill" }
+    ]
+  },
+  lofi: {
+    name: "Lofi Beats",
+    emoji: "☕",
+    color: "linear-gradient(135deg,#9c27b0,#6a1b9a)",
+    tracks: [
+      { id: "jfKfPfyJRdk", title: "Lofi Hip Hop Radio", artist: "Lofi Girl", album: "Lofi" },
+      { id: "lTRiuFIWV54", title: "Study Lofi Mix", artist: "Chill Beats", album: "Lofi" }
+    ]
+  }
+};
 
-let playlist = [...defaultPlaylist];
+/* =========================================================
+   STATE
+   ========================================================= */
+let currentUser = null;
+let playlist = [...PLAYLISTS.indo.tracks];
+let currentPlaylistKey = 'indo';
 let currentIndex = 0;
 let isPlaying = false;
 let isShuffle = false;
 let isRepeat = true;
 let progressTimer = null;
+let likedTracks = JSON.parse(localStorage.getItem('musify_liked') || '[]');
+let playedHistory = JSON.parse(localStorage.getItem('musify_history') || '[]');
+let ytReady = false;
 
 const $ = id => document.getElementById(id);
 const ytFrame = $('ytFrame');
-let ytReady = false;
-let ytPlayer = null;
+const toastEl = $('toast');
 
 /* =========================================================
-   YOUTUBE IFRAME API — pakai postMessage langsung ke iframe
+   LOGIN
+   ========================================================= */
+// Cek session
+const savedUser = localStorage.getItem('musify_user');
+if (savedUser) {
+  try {
+    currentUser = JSON.parse(savedUser);
+    showApp();
+  } catch(e) {}
+}
+
+$('loginGoogle').addEventListener('click', () => {
+  // Simulasi login Google — di production pakai Google Identity Services
+  doLogin({
+    name: "User Google",
+    email: "user@gmail.com",
+    provider: "google",
+    avatar: "G",
+    color: "linear-gradient(135deg,#4285f4,#34a853)"
+  });
+});
+
+$('loginFacebook').addEventListener('click', () => {
+  doLogin({
+    name: "User Facebook",
+    email: "user@facebook.com",
+    provider: "facebook",
+    avatar: "f",
+    color: "linear-gradient(135deg,#1877F2,#0d65d9)"
+  });
+});
+
+$('loginGuest').addEventListener('click', () => {
+  doLogin({
+    name: "Tamu",
+    email: "guest@musify.app",
+    provider: "guest",
+    avatar: "👤",
+    color: "linear-gradient(135deg,#666,#333)"
+  });
+});
+
+function doLogin(user) {
+  currentUser = user;
+  localStorage.setItem('musify_user', JSON.stringify(user));
+  showToast('✅ Selamat datang, ' + user.name + '!');
+  setTimeout(showApp, 400);
+}
+
+function showApp() {
+  $('loginScreen').classList.add('hide');
+  $('app').classList.add('show');
+  // Update UI user
+  const avatar = $('userAvatar');
+  const profileAvatar = $('profileAvatar');
+  const initial = currentUser.name.charAt(0).toUpperCase();
+  avatar.innerHTML = currentUser.avatar || initial;
+  profileAvatar.innerHTML = currentUser.avatar || initial;
+  avatar.style.background = currentUser.color || 'linear-gradient(135deg,#1DB954,#0d7a35)';
+  profileAvatar.style.background = currentUser.color || 'linear-gradient(135deg,#1DB954,#0d7a35)';
+  $('userName').textContent = currentUser.name;
+  $('profileName').textContent = currentUser.name;
+  $('profileType').textContent = currentUser.provider === 'guest' ? 'Akun Tamu' : 
+    (currentUser.provider === 'google' ? 'Akun Google' : 'Akun Facebook');
+  
+  // Init app
+  loadPlaylist('indo');
+  renderPlaylistCards();
+  updateStats();
+  setupYTHandlers();
+}
+
+function logout() {
+  if (!confirm('Yakin mau keluar dari akun ini?')) return;
+  localStorage.removeItem('musify_user');
+  currentUser = null;
+  location.reload();
+}
+
+/* =========================================================
+   YOUTUBE IFRAME (postMessage API)
    ========================================================= */
 function sendYT(func, args) {
   if (!ytFrame || !ytFrame.contentWindow) return;
@@ -494,27 +1014,33 @@ function sendYT(func, args) {
   );
 }
 
-// Dengarkan event dari YouTube
-window.addEventListener('message', (e) => {
-  if (!e.origin.includes('youtube.com')) return;
-  try {
-    const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-    if (data.event === 'onReady') {
-      ytReady = true;
-      console.log('✅ YouTube iframe ready');
-      // Set volume awal
-      sendYT('setVolume', [70]);
-    } else if (data.event === 'onStateChange') {
-      handleStateChange(data.info);
-    } else if (data.event === 'infoDelivery' && data.info) {
-      if (data.info.currentTime !== undefined && data.info.duration) {
-        updateProgressUI(data.info.currentTime, data.info.duration);
+function setupYTHandlers() {
+  window.addEventListener('message', (e) => {
+    if (!e.origin.includes('youtube.com')) return;
+    try {
+      const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+      if (data.event === 'onReady') {
+        ytReady = true;
+        sendYT('setVolume', [70]);
+        sendYT('addEventListener', ['onStateChange']);
+      } else if (data.event === 'onStateChange') {
+        handleYTState(data.info);
+      } else if (data.event === 'infoDelivery' && data.info) {
+        if (data.info.currentTime !== undefined && data.info.duration) {
+          updateProgressUI(data.info.currentTime, data.info.duration);
+        }
       }
-    }
-  } catch (err) {}
-});
+    } catch (err) {}
+  });
 
-function handleStateChange(state) {
+  // Init
+  setTimeout(() => {
+    sendYT('addEventListener', ['onReady']);
+    sendYT('addEventListener', ['onStateChange']);
+  }, 1500);
+}
+
+function handleYTState(state) {
   // 1=playing, 2=paused, 0=ended, 3=buffering
   if (state === 1) {
     isPlaying = true;
@@ -539,13 +1065,10 @@ function handleStateChange(state) {
   }
 }
 
-/* Karena postMessage events tidak selalu lengkap,
-   kita polling manual untuk update progress */
 function startProgressLoop() {
   stopProgressLoop();
   progressTimer = setInterval(() => {
     sendYT('getCurrentTime');
-    // Fallback: kita coba baca dari iframe API via infoDelivery events
   }, 500);
 }
 function stopProgressLoop() {
@@ -568,15 +1091,25 @@ function fmt(s) {
 }
 
 /* =========================================================
-   LOAD TRACK — ganti src iframe
+   LOAD TRACK
    ========================================================= */
+function loadPlaylist(key) {
+  currentPlaylistKey = key;
+  playlist = [...PLAYLISTS[key].tracks];
+  currentIndex = 0;
+  document.querySelectorAll('.pl-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.playlist === key);
+  });
+  renderTrackList();
+  if (playlist.length > 0) loadTrack(0, false);
+}
+
 function loadTrack(index, autoplay = true) {
   if (index < 0 || index >= playlist.length) return;
   currentIndex = index;
   const track = playlist[currentIndex];
   ytReady = false;
 
-  // Update UI
   $('heroTitle').textContent = track.title;
   $('heroArtist').textContent = track.artist;
   $('npTitle').textContent = track.title;
@@ -584,20 +1117,26 @@ function loadTrack(index, autoplay = true) {
   $('heroCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/hqdefault.jpg" onerror="this.parentElement.textContent='🎵'">`;
   $('npCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.parentElement.textContent='🎵'">`;
 
-  // Ganti src iframe dengan video baru
   const params = new URLSearchParams({
     enablejsapi: '1',
     autoplay: autoplay ? '1' : '0',
     rel: '0',
     modestbranding: '1',
-    playsinline: '1',
-    origin: window.location.origin
+    playsinline: '1'
   });
   ytFrame.src = `https://www.youtube.com/embed/${track.id}?${params}`;
 
   isPlaying = autoplay;
   $('playBtn').textContent = autoplay ? '❚❚' : '▶';
   $('bigPlay').textContent = autoplay ? '❚❚' : '▶';
+  
+  // Track history
+  playedHistory.unshift({ id: track.id, title: track.title, artist: track.artist, ts: Date.now() });
+  playedHistory = playedHistory.slice(0, 50);
+  localStorage.setItem('musify_history', JSON.stringify(playedHistory));
+  
+  updateLikeUI();
+  updateStats();
   renderTrackList();
 }
 
@@ -608,18 +1147,9 @@ function togglePlay() {
   if (playlist.length === 0) { showToast('Playlist kosong', true); return; }
   if (isPlaying) {
     sendYT('pauseVideo');
-    isPlaying = false;
-    $('playBtn').textContent = '▶';
-    $('bigPlay').textContent = '▶';
-    stopProgressLoop();
   } else {
     sendYT('playVideo');
-    isPlaying = true;
-    $('playBtn').textContent = '❚❚';
-    $('bigPlay').textContent = '❚❚';
-    startProgressLoop();
   }
-  renderTrackList();
 }
 
 function nextTrack() {
@@ -649,7 +1179,6 @@ function removeTrack(index) {
   if (playlist.length === 0) return;
   const wasCurrent = index === currentIndex;
   playlist.splice(index, 1);
-
   if (playlist.length === 0) {
     currentIndex = 0;
     isPlaying = false;
@@ -669,7 +1198,37 @@ function removeTrack(index) {
     currentIndex--;
   }
   renderTrackList();
+  updateStats();
   showToast('🗑 Dihapus');
+}
+
+/* =========================================================
+   LIKE
+   ========================================================= */
+function toggleLike(index) {
+  const track = playlist[index !== undefined ? index : currentIndex];
+  if (!track) return;
+  const pos = likedTracks.findIndex(t => t.id === track.id);
+  if (pos >= 0) {
+    likedTracks.splice(pos, 1);
+    showToast('💔 Dihapus dari favorit');
+  } else {
+    likedTracks.push({ id: track.id, title: track.title, artist: track.artist });
+    showToast('❤️ Ditambahkan ke favorit');
+  }
+  localStorage.setItem('musify_liked', JSON.stringify(likedTracks));
+  updateLikeUI();
+  renderTrackList();
+  renderFavList();
+  updateStats();
+}
+
+function updateLikeUI() {
+  if (playlist.length === 0) return;
+  const track = playlist[currentIndex];
+  const liked = likedTracks.some(t => t.id === track.id);
+  $('npLike').textContent = liked ? '♥' : '♡';
+  $('npLike').classList.toggle('liked', liked);
 }
 
 /* =========================================================
@@ -684,7 +1243,7 @@ function renderTrackList() {
     list.innerHTML = `<div style="text-align:center;padding:60px 20px;color:rgba(255,255,255,0.4);">
       <div style="font-size:64px;margin-bottom:16px;opacity:0.4;">🎵</div>
       <h3 style="color:#fff;margin-bottom:8px;">Playlist Kosong</h3>
-      <p style="font-size:13px;">Cari lagu di panel kanan!</p>
+      <p style="font-size:13px;">Pilih playlist lain atau cari lagu!</p>
     </div>`;
     return;
   }
@@ -692,6 +1251,7 @@ function renderTrackList() {
   playlist.forEach((track, i) => {
     const isActive = i === currentIndex && isPlaying;
     const isCurrent = i === currentIndex;
+    const liked = likedTracks.some(t => t.id === track.id);
     const row = document.createElement('div');
     row.className = 'track-row' + (isCurrent ? ' active' : '');
     row.innerHTML = `
@@ -703,14 +1263,21 @@ function renderTrackList() {
           <div class="t-artist">${esc(track.artist)}</div>
         </div>
       </div>
-      <div><button class="t-remove" data-remove="${i}">✕</button></div>
+      <div class="t-actions">
+        <button class="t-btn like ${liked ? 'liked' : ''}" data-like="${i}" title="Suka">${liked ? '♥' : '♡'}</button>
+        <button class="t-btn del" data-remove="${i}" title="Hapus">✕</button>
+      </div>
     `;
     row.addEventListener('click', (e) => {
-      if (e.target.dataset.remove !== undefined) return;
+      if (e.target.dataset.remove !== undefined || e.target.dataset.like !== undefined) return;
       if (isCurrent && isPlaying) togglePlay();
       else loadTrack(i, true);
     });
-    row.querySelector('.t-remove').addEventListener('click', (e) => {
+    row.querySelector('[data-like]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLike(i);
+    });
+    row.querySelector('[data-remove]').addEventListener('click', (e) => {
       e.stopPropagation();
       removeTrack(i);
     });
@@ -718,19 +1285,204 @@ function renderTrackList() {
   });
 }
 
+function renderPlaylistCards() {
+  const grid = $('playlistCards');
+  grid.innerHTML = '';
+  Object.entries(PLAYLISTS).forEach(([key, pl]) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-img" style="background:${pl.color};">${pl.emoji}</div>
+      <div class="card-title">${pl.name}</div>
+      <div class="card-sub">${pl.tracks.length} lagu</div>
+    `;
+    card.addEventListener('click', () => {
+      loadPlaylist(key);
+      navigateTo('home');
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+    grid.appendChild(card);
+  });
+}
+
+function renderFavList() {
+  const list = $('favList');
+  if (likedTracks.length === 0) {
+    list.innerHTML = `<div style="padding:12px 14px;font-size:12px;color:rgba(255,255,255,0.4);">Belum ada lagu favorit</div>`;
+    return;
+  }
+  list.innerHTML = likedTracks.slice(0, 4).map((t, i) => `
+    <div class="pl-item" data-fav="${i}">
+      <div class="pl-thumb" style="background:linear-gradient(135deg,#ff4081,#c2185b);">❤️</div>
+      <div><div class="pl-name">${esc(t.title.substring(0,20))}${t.title.length>20?'…':''}</div><div class="pl-sub">${esc(t.artist)}</div></div>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-fav]').forEach(el => {
+    el.addEventListener('click', () => {
+      const fav = likedTracks[parseInt(el.dataset.fav)];
+      const idx = playlist.findIndex(t => t.id === fav.id);
+      if (idx >= 0) loadTrack(idx, true);
+      else {
+        // Tambah ke playlist dulu
+        playlist.push({ ...fav, album: 'Favorit' });
+        loadTrack(playlist.length - 1, true);
+      }
+    });
+  });
+}
+
+function updateStats() {
+  $('statPlaylist').textContent = Object.keys(PLAYLISTS).length;
+  $('statLiked').textContent = likedTracks.length;
+  $('statPlayed').textContent = playedHistory.length;
+}
+
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
 function showToast(msg, isError) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.toggle('error', !!isError);
-  t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), 2200);
+  toastEl.textContent = msg;
+  toastEl.classList.toggle('error', !!isError);
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
 }
 
 /* =========================================================
-   SEARCH — pakai Invidious API (CORS OK, no key)
+   NAVIGATION
+   ========================================================= */
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  document.querySelectorAll('.page').forEach(el => {
+    el.classList.toggle('active', el.id === 'page-' + page);
+  });
+  const titles = { home:'Beranda', search:'Cari', collection:'Koleksi Kamu', profile:'Profile' };
+  $('pageTitle').textContent = titles[page] || 'Beranda';
+  
+  if (page === 'collection') renderCollection();
+  if (page === 'profile') updateStats();
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigateTo(el.dataset.page));
+});
+
+// Playlist sidebar
+document.querySelectorAll('.pl-item[data-playlist]').forEach(el => {
+  el.addEventListener('click', () => {
+    loadPlaylist(el.dataset.playlist);
+    navigateTo('home');
+  });
+});
+
+// User chip → profile
+$('userChip').addEventListener('click', () => navigateTo('profile'));
+
+// Genre chips
+document.querySelectorAll('#genreChips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#genreChips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    const genre = chip.dataset.genre;
+    const all = PLAYLISTS.indo.tracks;
+    playlist = genre === 'all' ? [...all] : all.filter(t => t.genre === genre);
+    currentIndex = 0;
+    renderTrackList();
+    if (playlist.length > 0) loadTrack(0, false);
+    else showToast('Tidak ada lagu di genre ini', true);
+  });
+});
+
+// Collection chips
+document.querySelectorAll('[data-coll]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('[data-coll]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    renderCollection(chip.dataset.coll);
+  });
+});
+
+function renderCollection(type = 'playlists') {
+  const grid = $('collectionGrid');
+  grid.innerHTML = '';
+
+  if (type === 'playlists') {
+    Object.entries(PLAYLISTS).forEach(([key, pl]) => {
+      const card = document.createElement('div');
+      card.className = 'collection-card';
+      card.innerHTML = `
+        <div class="cc-img" style="background:${pl.color};">${pl.emoji}</div>
+        <div class="cc-title">${pl.name}</div>
+        <div class="cc-sub">${pl.tracks.length} lagu</div>
+      `;
+      card.addEventListener('click', () => {
+        loadPlaylist(key);
+        navigateTo('home');
+      });
+      grid.appendChild(card);
+    });
+  } else if (type === 'liked') {
+    if (likedTracks.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:rgba(255,255,255,0.4);">
+        <div style="font-size:64px;margin-bottom:16px;opacity:0.4;">❤️</div>
+        <h3 style="color:#fff;margin-bottom:8px;">Belum ada lagu disukai</h3>
+        <p>Klik ❤ pada lagu untuk menambahkan ke favorit</p>
+      </div>`;
+      return;
+    }
+    likedTracks.forEach((t, i) => {
+      const card = document.createElement('div');
+      card.className = 'collection-card';
+      card.innerHTML = `
+        <div class="cc-img"><img src="https://img.youtube.com/vi/${t.id}/default.jpg"></div>
+        <div class="cc-title">${esc(t.title)}</div>
+        <div class="cc-sub">${esc(t.artist)}</div>
+      `;
+      card.addEventListener('click', () => {
+        const idx = playlist.findIndex(x => x.id === t.id);
+        if (idx >= 0) loadTrack(idx, true);
+        else {
+          playlist.push({ ...t, album: 'Favorit' });
+          loadTrack(playlist.length - 1, true);
+        }
+        navigateTo('home');
+      });
+      grid.appendChild(card);
+    });
+  } else if (type === 'recent') {
+    if (playedHistory.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:rgba(255,255,255,0.4);">
+        <div style="font-size:64px;margin-bottom:16px;opacity:0.4;">🕒</div>
+        <h3 style="color:#fff;margin-bottom:8px;">Belum ada riwayat</h3>
+        <p>Putar lagu untuk melihat riwayat di sini</p>
+      </div>`;
+      return;
+    }
+    playedHistory.slice(0, 20).forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'collection-card';
+      card.innerHTML = `
+        <div class="cc-img"><img src="https://img.youtube.com/vi/${t.id}/default.jpg"></div>
+        <div class="cc-title">${esc(t.title)}</div>
+        <div class="cc-sub">${esc(t.artist)}</div>
+      `;
+      card.addEventListener('click', () => {
+        const idx = playlist.findIndex(x => x.id === t.id);
+        if (idx >= 0) loadTrack(idx, true);
+        else {
+          playlist.push({ ...t, album: 'Riwayat' });
+          loadTrack(playlist.length - 1, true);
+        }
+        navigateTo('home');
+      });
+      grid.appendChild(card);
+    });
+  }
+}
+
+/* =========================================================
+   SEARCH
    ========================================================= */
 async function searchYoutube(query) {
   const instances = [
@@ -746,16 +1498,13 @@ async function searchYoutube(query) {
       if (!res.ok) continue;
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        return data
-          .filter(i => i.videoId)
-          .slice(0, 8)
-          .map(i => ({
-            id: i.videoId,
-            title: i.title,
-            artist: i.author || 'YouTube',
-            album: 'YouTube',
-            thumbnail: i.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${i.videoId}/default.jpg`
-          }));
+        return data.filter(i => i.videoId).slice(0, 12).map(i => ({
+          id: i.videoId,
+          title: i.title,
+          artist: i.author || 'YouTube',
+          album: 'YouTube',
+          thumbnail: i.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${i.videoId}/default.jpg`
+        }));
       }
     } catch (e) {
       console.warn('Instance failed:', base, e.message);
@@ -765,56 +1514,55 @@ async function searchYoutube(query) {
   throw new Error('Semua instance gagal');
 }
 
-async function searchAndShow(query) {
+async function searchAndShow(query, target = 'right') {
   if (!query.trim()) return;
-  const btn = $('searchBtn');
+  const btn = target === 'right' ? $('searchBtn') : $('searchBtnPage');
+  const resultBox = target === 'right' ? $('searchResults') : $('searchResultsPage');
+  const wrap = target === 'right' ? $('searchResultsWrap') : null;
+  
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
-  $('infoBox').innerHTML = '🔍 Mencari...';
 
   try {
     const results = await searchYoutube(query);
     if (results.length === 0) {
-      $('infoBox').innerHTML = '❌ Tidak ada hasil';
-      $('searchResultsWrap').style.display = 'none';
+      resultBox.innerHTML = '<div class="info-box">❌ Tidak ada hasil</div>';
       return;
     }
-    renderSearchResults(results);
-    $('infoBox').innerHTML = `✅ ${results.length} hasil. Klik untuk putar, + untuk tambah.`;
+    resultBox.innerHTML = '';
+    results.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'sr-item';
+      item.innerHTML = `
+        <div class="sr-thumb"><img src="${r.thumbnail}" onerror="this.style.display='none';"></div>
+        <div class="sr-info">
+          <div class="sr-title">${esc(r.title)}</div>
+          <div class="sr-channel">${esc(r.artist)}</div>
+        </div>
+        <button class="sr-add" title="Tambah">+</button>
+      `;
+      item.querySelector('.sr-add').addEventListener('click', (e) => {
+        e.stopPropagation();
+        addTrack(r, false);
+      });
+      item.addEventListener('click', () => addTrack(r, true));
+      resultBox.appendChild(item);
+    });
+    if (wrap) wrap.style.display = 'block';
+    if (target === 'page') $('searchResultTitle').textContent = `Hasil: "${query}"`;
+    showToast(`✅ ${results.length} hasil ditemukan`);
   } catch (err) {
     console.error(err);
-    $('infoBox').innerHTML = '❌ Gagal mencari. Coba kata kunci lain.';
-    $('searchResultsWrap').style.display = 'none';
+    resultBox.innerHTML = '<div class="info-box">❌ Gagal mencari. Coba lagi.</div>';
   } finally {
     btn.disabled = false;
     btn.textContent = '→';
   }
 }
 
-function renderSearchResults(results) {
-  const wrap = $('searchResultsWrap');
-  const box = $('searchResults');
-  box.innerHTML = '';
-  wrap.style.display = 'block';
-
-  results.forEach(r => {
-    const item = document.createElement('div');
-    item.className = 'sr-item';
-    item.innerHTML = `
-      <div class="sr-thumb"><img src="${r.thumbnail}" onerror="this.style.display='none';"></div>
-      <div class="sr-info">
-        <div class="sr-title">${esc(r.title)}</div>
-        <div class="sr-channel">${esc(r.artist)}</div>
-      </div>
-      <button class="sr-add" title="Tambah">+</button>
-    `;
-    item.querySelector('.sr-add').addEventListener('click', (e) => {
-      e.stopPropagation();
-      addTrack(r, false);
-    });
-    item.addEventListener('click', () => addTrack(r, true));
-    box.appendChild(item);
-  });
+function quickSearch(q) {
+  $('searchInputPage').value = q;
+  searchAndShow(q, 'page');
 }
 
 function addTrack(track, playNow) {
@@ -826,8 +1574,12 @@ function addTrack(track, playNow) {
   }
   playlist.push(track);
   renderTrackList();
+  updateStats();
   showToast('✅ Ditambahkan');
-  if (playNow) loadTrack(playlist.length - 1, true);
+  if (playNow) {
+    loadTrack(playlist.length - 1, true);
+    navigateTo('home');
+  }
 }
 
 /* =========================================================
@@ -837,6 +1589,7 @@ $('playBtn').addEventListener('click', togglePlay);
 $('bigPlay').addEventListener('click', togglePlay);
 $('nextBtn').addEventListener('click', nextTrack);
 $('prevBtn').addEventListener('click', prevTrack);
+$('npLike').addEventListener('click', () => toggleLike());
 
 $('shuffleBtn').addEventListener('click', () => {
   isShuffle = !isShuffle;
@@ -857,13 +1610,10 @@ $('repeatBig').addEventListener('click', () => $('repeatBtn').click());
 $('progressBar').addEventListener('click', (e) => {
   const rect = $('progressBar').getBoundingClientRect();
   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  // Kirim command seek — kita perlu tahu durasi. Ambil dari teks duration
   const durText = $('duration').textContent;
   const parts = durText.split(':').map(Number);
   const dur = parts[0] * 60 + (parts[1] || 0);
-  if (dur > 0) {
-    sendYT('seekTo', [pct * dur, true]);
-  }
+  if (dur > 0) sendYT('seekTo', [pct * dur, true]);
 });
 
 $('volBar').addEventListener('click', (e) => {
@@ -873,15 +1623,19 @@ $('volBar').addEventListener('click', (e) => {
   sendYT('setVolume', [Math.round(pct * 100)]);
 });
 
-$('searchBtn').addEventListener('click', () => searchAndShow($('searchInput').value));
+$('searchBtn').addEventListener('click', () => searchAndShow($('searchInput').value, 'right'));
 $('searchInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') searchAndShow($('searchInput').value);
+  if (e.key === 'Enter') searchAndShow($('searchInput').value, 'right');
+});
+$('searchBtnPage').addEventListener('click', () => searchAndShow($('searchInputPage').value, 'page'));
+$('searchInputPage').addEventListener('keypress', e => {
+  if (e.key === 'Enter') searchAndShow($('searchInputPage').value, 'page');
 });
 
 document.querySelectorAll('.pick').forEach(p => {
   p.addEventListener('click', () => {
     $('searchInput').value = p.dataset.q;
-    searchAndShow(p.dataset.q);
+    searchAndShow(p.dataset.q, 'right');
   });
 });
 
@@ -892,20 +1646,9 @@ document.addEventListener('keydown', e => {
   else if (e.code === 'ArrowLeft') prevTrack();
 });
 
-/* =========================================================
-   INIT
-   ========================================================= */
-renderTrackList();
-
-// Setelah iframe load pertama, kirim sinyal enablejsapi
-setTimeout(() => {
-  sendYT('addEventListener', ['onReady']);
-  sendYT('addEventListener', ['onStateChange']);
-  sendYT('setVolume', [70]);
-}, 2000);
-
-console.log('🎵 Musify siap.');
+/* Init favList */
+renderFavList();
 </script>
 
 </body>
-</html>
+ </html>
